@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+
+# Virtual environments
+.venv/
+venv/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+
+# Testing and linting
+.pytest_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+
+# Build artifacts
+build/
+dist/
+
+# Logs
+*.log
+
+# Local documents and runtime data
+data/*
+!data/.gitkeep
+
+# Operating system
+.DS_Store
+Thumbs.db
+
+# Local and potentially private documents
+sample_docs/*
+!sample_docs/nist_sp_800_63_4.pdf
+!sample_docs/nist_sp_800_63a_4.pdf
+!sample_docs/nist_sp_800_63b_4.pdf
+
+# Windows metadata sidecars copied into WSL
+*:Zone.Identifier
