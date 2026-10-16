@@ -43,3 +43,6 @@ jobs:
 
       - name: Run tests
         run: uv run pytest -q
+
+      - name: Build API image
+        run: docker build --tag doculens-api:ci .

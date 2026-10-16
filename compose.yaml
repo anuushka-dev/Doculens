@@ -1,0 +1,41 @@
+services:
+  api:
+    image: doculens-api:local
+    build:
+      context: .
+      dockerfile: Dockerfile
+
+    init: true
+    restart: unless-stopped
+
+    user: "10001:10001"
+    read_only: true
+
+    cap_drop:
+      - ALL
+
+    security_opt:
+      - no-new-privileges:true
+
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,size=67108864,mode=1777
+
+    ports:
+      - "127.0.0.1:${DOCULENS_PORT:-8000}:8000"
+
+    environment:
+      DOCULENS_ENVIRONMENT: "${DOCULENS_ENVIRONMENT:-production}"
+      DOCULENS_LOG_LEVEL: "${DOCULENS_LOG_LEVEL:-INFO}"
+      DOCULENS_MAX_UPLOAD_BYTES: "${DOCULENS_MAX_UPLOAD_BYTES:-20971520}"
+      DOCULENS_MAX_PDF_PAGES: "${DOCULENS_MAX_PDF_PAGES:-250}"
+
+    healthcheck:
+      test:
+        - CMD
+        - python
+        - -c
+        - "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health', timeout=2).read()"
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
