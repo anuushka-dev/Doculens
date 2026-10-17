@@ -1,0 +1,181 @@
+
+{
+  "dataset_id": "devops_truth_v1",
+  "source_file": "do_1143230645565194241527_1748420997886_devopsjd.pdf",
+  "source_pages": 3,
+  "purpose": "Evaluate source-grounded answers and abstention using the complete PDF as context.",
+  "cases": [
+    {
+      "id": "A01",
+      "question": "Where is the advertised job located?",
+      "expected_status": "answered",
+      "expected_facts": ["New Delhi"],
+      "evidence_page": 3,
+      "evidence_quote": "JOB LOCATION New Delhi"
+    },
+    {
+      "id": "A02",
+      "question": "How many Dev Ops posts are advertised?",
+      "expected_status": "answered",
+      "expected_facts": ["one post"],
+      "evidence_page": 1,
+      "evidence_quote": "Name of Post Total Post 1. Dev Ops 1"
+    },
+    {
+      "id": "A03",
+      "question": "What application deadline is stated in the advertisement?",
+      "expected_status": "answered",
+      "expected_facts": ["14th June 2025"],
+      "evidence_page": 1,
+      "evidence_quote": "by 14th June 2025"
+    },
+    {
+      "id": "A04",
+      "question": "What prior experience does the job description require?",
+      "expected_status": "answered",
+      "expected_facts": ["2-5 years", "DevOps Engineer or a similar role"],
+      "evidence_page": 3,
+      "evidence_quote": "2-5 Years Proven experience as a DevOps Engineer or in a similar role."
+    },
+    {
+      "id": "A05",
+      "question": "Who does the role report to?",
+      "expected_status": "answered",
+      "expected_facts": ["Lead Platform Architect"],
+      "evidence_page": 3,
+      "evidence_quote": "REPORT TO Lead Platform Architect"
+    },
+    {
+      "id": "A06",
+      "question": "What educational qualification is specified?",
+      "expected_status": "answered",
+      "expected_facts": ["Bachelor's degree", "Computer Science, Information Technology, or a related field"],
+      "evidence_page": 3,
+      "evidence_quote": "Bachelor’s degree in Computer Science, Information Technology, or a related field."
+    },
+    {
+      "id": "A07",
+      "question": "Which scripting languages are named in the job requirements?",
+      "expected_status": "answered",
+      "expected_facts": ["Python", "Bash", "PowerShell"],
+      "evidence_page": 3,
+      "evidence_quote": "Python, Bash, or PowerShell"
+    },
+    {
+      "id": "A08",
+      "question": "Which cloud platforms are mentioned as examples?",
+      "expected_status": "answered",
+      "expected_facts": ["AWS", "Azure", "GCP"],
+      "evidence_page": 3,
+      "evidence_quote": "tools like AWS, Azure, or GCP."
+    },
+    {
+      "id": "A09",
+      "question": "What does the job description say about CI/CD?",
+      "expected_status": "answered",
+      "expected_facts": ["design, build, and maintain CI/CD pipelines", "streamline software delivery"],
+      "evidence_page": 3,
+      "evidence_quote": "Design, build, and maintain continuous integration and deployment pipelines (CI/CD) to streamline software delivery."
+    },
+    {
+      "id": "A10",
+      "question": "What is the named digital/e-learning platform?",
+      "expected_status": "answered",
+      "expected_facts": ["iGOT-Karmayogi"],
+      "evidence_page": 1,
+      "evidence_quote": "iGOT-Karmayogi (Integrated Government Online Training) the digital/e-learning platform"
+    },
+    {
+      "id": "A11",
+      "question": "Which email address is provided for applications?",
+      "expected_status": "answered",
+      "expected_facts": ["careers.karmayogi@gov.in"],
+      "evidence_page": 1,
+      "evidence_quote": "careers.karmayogi@gov.in"
+    },
+    {
+      "id": "A12",
+      "question": "Which division or department is listed for the role?",
+      "expected_status": "answered",
+      "expected_facts": ["E-HRMS"],
+      "evidence_page": 3,
+      "evidence_quote": "DIVISION/DEPARTMENT E-HRMS"
+    },
+    {
+      "id": "A13",
+      "question": "What ownership status does the advertisement state for Karmayogi Bharat?",
+      "expected_status": "answered",
+      "expected_facts": ["100% government-owned", "not-for-profit"],
+      "evidence_page": 1,
+      "evidence_quote": "100% Government owned not-for-profit Company"
+    },
+    {
+      "id": "U01",
+      "question": "What exact annual salary amount is guaranteed for this role?",
+      "expected_status": "insufficient_evidence",
+      "expected_facts": [],
+      "context_page": 1,
+      "context_quote": "The remuneration would be based on the qualifications and experience of the candidate and as per industry norms.",
+      "reason": "The advertisement provides no exact salary amount or guarantee."
+    },
+    {
+      "id": "U02",
+      "question": "Which one cloud provider has the employer definitively selected for this role?",
+      "expected_status": "insufficient_evidence",
+      "expected_facts": [],
+      "context_page": 3,
+      "context_quote": "tools like AWS, Azure, or GCP.",
+      "reason": "The document lists examples but does not identify a selected provider."
+    },
+    {
+      "id": "U03",
+      "question": "Does the employer offer remote or hybrid work?",
+      "expected_status": "insufficient_evidence",
+      "expected_facts": [],
+      "reason": "The document does not state a remote or hybrid work arrangement."
+    },
+    {
+      "id": "U04",
+      "question": "What is the maximum eligible applicant age?",
+      "expected_status": "insufficient_evidence",
+      "expected_facts": [],
+      "context_page": 2,
+      "context_quote": "Date of Birth: (DD/MM/YY)",
+      "reason": "The application form asks for a date of birth but no maximum age limit is provided."
+    },
+    {
+      "id": "U05",
+      "question": "Must applicants hold a Kubernetes certification?",
+      "expected_status": "insufficient_evidence",
+      "expected_facts": [],
+      "context_page": 3,
+      "context_quote": "containerization (e.g., Docker, Kubernetes)",
+      "reason": "Kubernetes is mentioned, but a Kubernetes certification requirement is not stated."
+    },
+    {
+      "id": "U06",
+      "question": "How many people applied for this vacancy?",
+      "expected_status": "insufficient_evidence",
+      "expected_facts": [],
+      "reason": "The advertisement gives the number of posts, not the number of applicants."
+    },
+    {
+      "id": "U07",
+      "question": "Is this position currently accepting applications?",
+      "expected_status": "insufficient_evidence",
+      "expected_facts": [],
+      "context_page": 1,
+      "context_quote": "by 14th June 2025",
+      "reason": "The document states a historical deadline but does not establish the vacancy's current status."
+    },
+    {
+      "id": "U08",
+      "question": "On what exact date will interviews take place?",
+      "expected_status": "insufficient_evidence",
+      "expected_facts": [],
+      "context_page": 1,
+      "context_quote": "Only short-listed candidates will be invited for the interview/selection process.",
+      "reason": "No interview date or schedule is supplied."
+    }
+  ]
+}

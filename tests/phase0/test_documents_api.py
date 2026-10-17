@@ -1,4 +1,3 @@
-
 from types import SimpleNamespace
 
 import pymupdf
@@ -69,7 +68,10 @@ def test_extract_endpoint_rejects_unsupported_extension(
     )
 
     assert response.status_code == 422
-    assert response.json()["detail"]["code"] == "unsupported_file_type"
+
+    detail = response.json()["detail"]
+    assert detail["code"] == "unsupported_file_type"
+    assert detail["message"] == "Only PDF files are supported."
 
 
 def test_extract_endpoint_rejects_malformed_pdf(
@@ -118,7 +120,10 @@ def test_extract_endpoint_rejects_upload_over_limit(
     )
 
     assert response.status_code == 413
-    assert response.json()["detail"]["code"] == "pdf_too_large"
+
+    detail = response.json()["detail"]
+    assert detail["code"] == "pdf_too_large"
+    assert detail["message"] == "The upload exceeds the 32-byte limit."
 
 
 def test_extract_endpoint_rejects_page_limit(
@@ -140,4 +145,9 @@ def test_extract_endpoint_rejects_page_limit(
     )
 
     assert response.status_code == 413
-    assert response.json()["detail"]["code"] == "pdf_page_limit_exceeded"
+
+    detail = response.json()["detail"]
+    assert detail["code"] == "pdf_page_limit_exceeded"
+    assert detail["message"] == (
+        "The PDF contains 2 pages; the configured limit is 1."
+    )
