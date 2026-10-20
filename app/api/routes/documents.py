@@ -1,3 +1,4 @@
+"""HTTP routes for document ingestion."""
 
 from typing import Annotated
 
@@ -24,7 +25,7 @@ async def _read_upload_limited(
     upload: UploadFile,
     max_upload_bytes: int,
 ) -> bytes:
-    """Read an upload incrementally, enforcing its maximum size."""
+    """Read an upload incrementally without exceeding the configured limit."""
     chunks: list[bytes] = []
     total_bytes = 0
 
@@ -47,7 +48,7 @@ async def _read_upload_limited(
 
 
 def _error_detail(error: PDFExtractionError) -> dict[str, str]:
-    """Return a stable error response without internal parser details."""
+    """Return a stable error payload without exposing parser internals."""
     return {
         "code": error.code,
         "message": str(error),
@@ -60,23 +61,23 @@ def _error_detail(error: PDFExtractionError) -> dict[str, str]:
     status_code=status.HTTP_200_OK,
     summary="Extract text from a PDF",
     description=(
-        "Validates and extracts a text-selectable PDF, returning "
-        "extracted text with one-based page numbers."
+        "Extracts selectable text from a PDF and returns page-level text "
+        "with one-based page numbers. OCR is not enabled."
     ),
 )
 async def extract_document(
     file: Annotated[
         UploadFile,
-        File(description="One English-language PDF"),
+        File(description="PDF file to extract"),
     ],
 ) -> PDFExtractionResult:
     """Validate and extract an uploaded PDF."""
-    settings = get_settings()
-
     try:
+        settings = get_settings()
+
         pdf_bytes = await _read_upload_limited(
-            file,
-            settings.max_upload_bytes,
+            upload=file,
+            max_upload_bytes=settings.max_upload_bytes,
         )
 
         return ingest_pdf_upload(

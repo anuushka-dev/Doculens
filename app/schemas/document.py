@@ -1,3 +1,4 @@
+"""Validated response schemas for extracted PDF documents."""
 
 from typing import Literal
 from uuid import UUID
@@ -17,20 +18,20 @@ PageTextStatus = Literal["ok", "empty_text", "near_empty_text"]
 
 
 class ExtractedPage(BaseModel):
-    """Validated text and metadata for one PDF page."""
+    """Validated extracted text and metadata for one PDF page."""
 
     model_config = ConfigDict(
         extra="forbid",
         frozen=True,
     )
 
-    page_number: int = Field(ge=1)
-    text: str
+    page_number: int = Field(ge=1, strict=True)
+    text: str = Field(strict=True)
 
     @computed_field
     @property
     def character_count(self) -> int:
-        """Count non-whitespace-padded extracted characters."""
+        """Count extracted characters after trimming outer whitespace."""
         return len(self.text.strip())
 
     @computed_field
@@ -55,7 +56,7 @@ class ExtractedPage(BaseModel):
 
 
 class PDFExtractionResult(BaseModel):
-    """Successful extraction with document identity and page provenance."""
+    """Validated extraction result with document identity and page provenance."""
 
     model_config = ConfigDict(
         extra="forbid",
@@ -63,14 +64,21 @@ class PDFExtractionResult(BaseModel):
     )
 
     document_id: UUID
-    filename: str = Field(min_length=1, max_length=255)
-    sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    filename: str = Field(
+        min_length=1,
+        max_length=255,
+        strict=True,
+    )
+    sha256: str = Field(
+        pattern=r"^[0-9a-f]{64}$",
+        strict=True,
+    )
     pages: tuple[ExtractedPage, ...] = Field(min_length=1)
 
     @field_validator("filename")
     @classmethod
     def validate_filename(cls, value: str) -> str:
-        """Require a safe display filename, not a filesystem path."""
+        """Require a printable basename rather than a filesystem path."""
         value = value.strip()
 
         if not value:
@@ -86,7 +94,7 @@ class PDFExtractionResult(BaseModel):
 
     @model_validator(mode="after")
     def validate_page_sequence(self) -> "PDFExtractionResult":
-        """Require consecutive, one-based page numbers and usable text."""
+        """Require consecutive, one-based pages and text somewhere in the PDF."""
         actual_numbers = tuple(page.page_number for page in self.pages)
         expected_numbers = tuple(range(1, len(self.pages) + 1))
 
@@ -105,16 +113,19 @@ class PDFExtractionResult(BaseModel):
     @computed_field
     @property
     def page_count(self) -> int:
+        """Return the number of extracted pages."""
         return len(self.pages)
 
     @computed_field
     @property
     def total_character_count(self) -> int:
+        """Return the combined character count across all pages."""
         return sum(page.character_count for page in self.pages)
 
     @computed_field
     @property
     def empty_page_numbers(self) -> tuple[int, ...]:
+        """Return one-based page numbers with no extracted text."""
         return tuple(
             page.page_number
             for page in self.pages
@@ -124,6 +135,7 @@ class PDFExtractionResult(BaseModel):
     @computed_field
     @property
     def near_empty_page_numbers(self) -> tuple[int, ...]:
+        """Return one-based page numbers with fewer than 20 characters."""
         return tuple(
             page.page_number
             for page in self.pages

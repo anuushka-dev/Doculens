@@ -15,38 +15,56 @@ class PDFExtractionError(Exception):
 
 
 class InvalidFilenameError(PDFExtractionError):
+    """The upload does not have a usable display filename."""
+
     code = "invalid_filename"
 
 
 class EmptyUploadError(PDFExtractionError):
+    """The uploaded file contains no bytes."""
+
     code = "empty_upload"
 
 
 class UnsupportedFileTypeError(PDFExtractionError):
+    """The submitted filename does not identify a PDF."""
+
     code = "unsupported_file_type"
 
 
 class PDFTooLargeError(PDFExtractionError):
+    """The uploaded PDF exceeds the configured byte limit."""
+
     code = "pdf_too_large"
 
 
 class InvalidPDFError(PDFExtractionError):
+    """The PDF header, structure, or metadata is invalid."""
+
     code = "invalid_pdf"
 
 
 class EncryptedPDFError(PDFExtractionError):
+    """The PDF requires a password."""
+
     code = "encrypted_pdf"
 
 
 class PDFPageLimitError(PDFExtractionError):
+    """The PDF exceeds the configured page limit."""
+
     code = "pdf_page_limit_exceeded"
 
 
 class NoExtractableTextError(PDFExtractionError):
+    """The PDF contains no usable selectable text."""
+
     code = "no_extractable_text"
 
 
 class PDFPageExtractionError(PDFExtractionError):
+    """Text extraction failed for an individual page."""
+
     code = "page_extraction_failed"
 
     def __init__(self, page_number: int) -> None:
@@ -56,8 +74,17 @@ class PDFPageExtractionError(PDFExtractionError):
         )
 
 
+def _validate_resource_limit(value: int, name: str) -> None:
+    """Reject invalid limits before processing the document."""
+    if isinstance(value, bool) or not isinstance(value, int):
+        raise TypeError(f"{name} must be an integer.")
+
+    if value < 1:
+        raise ValueError(f"{name} must be positive.")
+
+
 def _normalize_filename(filename: str) -> str:
-    """Normalize an uploaded filename for display, never for file access."""
+    """Return a safe display basename, never a filesystem path."""
     if not isinstance(filename, str) or not filename.strip():
         raise InvalidFilenameError("A filename is required.")
 
@@ -66,8 +93,7 @@ def _normalize_filename(filename: str) -> str:
             "The filename contains unsupported control characters."
         )
 
-    # Browsers and operating systems may supply different path separators.
-    # Keep only the basename; never use the supplied name to write a file.
+    # Handle both POSIX and Windows-style paths.
     basename = filename.replace("\\", "/").rsplit("/", maxsplit=1)[-1]
     basename = basename.strip()
 
@@ -79,7 +105,7 @@ def _normalize_filename(filename: str) -> str:
             "Only PDF files are supported."
         )
 
-    # Bound metadata length while preserving the original extension.
+    # Bound display metadata while retaining the PDF extension.
     if len(basename) > 255:
         extension = basename[-4:]
         stem = basename[:-4]
@@ -89,13 +115,14 @@ def _normalize_filename(filename: str) -> str:
 
 
 def _normalize_page_text(text: str) -> str:
-    """Normalize Unicode and line endings while preserving layout spacing."""
+    """Normalize text without merging page boundaries or collapsing layout."""
     if not text:
         return ""
 
     normalized = unicodedata.normalize("NFC", text)
     normalized = normalized.replace("\u00a0", " ")
-    normalized = normalized.replace("\r\n", "\n").replace("\r", "\n")
+    normalized = normalized.replace("\r\n", "\n")
+    normalized = normalized.replace("\r", "\n")
     normalized = normalized.replace("\x0c", "\n")
 
     lines: list[str] = []
@@ -105,11 +132,12 @@ def _normalize_page_text(text: str) -> str:
         line = raw_line.rstrip()
 
         if line.strip():
-            # Keep indentation and internal spacing for code and tables.
+            # Preserve indentation and internal spacing, which may matter
+            # for code samples, aligned text, and tables.
             lines.append(line)
             previous_line_was_blank = False
         elif lines and not previous_line_was_blank:
-            # Avoid excessively long runs of blank lines.
+            # Keep one separator between text blocks, not long blank runs.
             lines.append("")
             previous_line_was_blank = True
 
@@ -123,35 +151,34 @@ def extract_pdf_bytes(
     max_upload_bytes: int,
     max_pdf_pages: int,
 ) -> PDFExtractionResult:
-    """Extract validated, page-aware text from an uploaded PDF.
+    """Validate a PDF and return immutable, page-aware extraction records.
+
+    This function owns PDF-specific validation and parsing only.
 
     Raises:
-        TypeError: If pdf_bytes is not bytes.
-        ValueError: If configured resource limits are invalid.
-        PDFExtractionError: If the document cannot be ingested.
+        TypeError: Input bytes or resource limits have the wrong type.
+        ValueError: A resource limit is not positive.
+        PDFExtractionError: The upload cannot be processed as a supported PDF.
     """
     if not isinstance(pdf_bytes, bytes):
         raise TypeError("pdf_bytes must be bytes.")
 
-    if max_upload_bytes < 1:
-        raise ValueError("max_upload_bytes must be positive.")
-
-    if max_pdf_pages < 1:
-        raise ValueError("max_pdf_pages must be positive.")
+    _validate_resource_limit(max_upload_bytes, "max_upload_bytes")
+    _validate_resource_limit(max_pdf_pages, "max_pdf_pages")
 
     safe_filename = _normalize_filename(filename)
 
     if not pdf_bytes:
         raise EmptyUploadError("The uploaded file is empty.")
 
-    # Check size before invoking the PDF parser.
+    # Check size before invoking the parser.
     if len(pdf_bytes) > max_upload_bytes:
         raise PDFTooLargeError(
             f"The PDF exceeds the {max_upload_bytes}-byte upload limit."
         )
 
-    # Reject obvious non-PDF input before parsing. The parser performs
-    # the definitive structural validation below.
+    # The PDF header may occur within the first 1,024 bytes.
+    # This quick check is followed by PyMuPDF's structural parsing.
     if b"%PDF-" not in pdf_bytes[:1024]:
         raise InvalidPDFError(
             "The uploaded content does not have a valid PDF header."
@@ -170,17 +197,26 @@ def extract_pdf_bytes(
                 "The PDF could not be opened or parsed."
             ) from exc
 
-        if document.needs_pass:
-            raise EncryptedPDFError(
-                "Password-protected PDFs are not supported."
-            )
+        # A malformed document can fail while exposing metadata as well
+        # as while opening. Keep those failures inside this parser boundary.
+        try:
+            if document.needs_pass:
+                raise EncryptedPDFError(
+                    "Password-protected PDFs are not supported."
+                )
 
-        page_count = document.page_count
+            page_count = document.page_count
+        except PDFExtractionError:
+            raise
+        except (OSError, RuntimeError, ValueError) as exc:
+            raise InvalidPDFError(
+                "The PDF metadata could not be read."
+            ) from exc
 
         if page_count < 1:
             raise InvalidPDFError("The PDF contains no pages.")
 
-        # Reject oversized documents before extracting individual pages.
+        # Reject excessive page counts before extracting page content.
         if page_count > max_pdf_pages:
             raise PDFPageLimitError(
                 f"The PDF contains {page_count} pages; "
@@ -195,7 +231,13 @@ def extract_pdf_bytes(
             try:
                 page = document.load_page(page_index)
                 extracted_text = page.get_text("text") or ""
-            except (OSError, RuntimeError, ValueError) as exc:
+
+                if not isinstance(extracted_text, str):
+                    raise TypeError(
+                        "The PDF parser returned a non-string page result."
+                    )
+
+            except (OSError, RuntimeError, ValueError, TypeError) as exc:
                 raise PDFPageExtractionError(page_number) from exc
 
             pages.append(
@@ -205,6 +247,8 @@ def extract_pdf_bytes(
                 )
             )
 
+        # Preserve empty pages in mixed documents so later source page IDs
+        # do not shift. Reject only when the entire document has no text.
         if not any(page.text.strip() for page in pages):
             raise NoExtractableTextError(
                 "No extractable text was found. This release supports "
@@ -218,13 +262,6 @@ def extract_pdf_bytes(
             pages=tuple(pages),
         )
 
-    except PDFExtractionError:
-        raise
-    except (OSError, RuntimeError, ValueError) as exc:
-        # Convert expected parser failures into a stable application error.
-        raise InvalidPDFError(
-            "The PDF could not be processed."
-        ) from exc
     finally:
         if document is not None:
             document.close()

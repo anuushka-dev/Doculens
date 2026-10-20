@@ -1,0 +1,50 @@
+{
+  "schema_version": "1.0",
+  "fixture_type": "synthetic_test_truth",
+  "description": "Expected page text for deterministic PDF ingestion tests. This fixture is not real-corpus benchmark evidence.",
+  "documents": [
+    {
+      "id": "multipage_with_empty_middle",
+      "filename": "multipage_with_empty_middle.pdf",
+      "pages": [
+        {
+          "page_number": 1,
+          "expected_text": "DocuLens extracts searchable body text from the first page.",
+          "include_in_coverage": true
+        },
+        {
+          "page_number": 2,
+          "expected_text": "",
+          "include_in_coverage": false
+        },
+        {
+          "page_number": 3,
+          "expected_text": "The third page retains its own one-based page identifier and source text.",
+          "include_in_coverage": true
+        }
+      ]
+    },
+    {
+      "id": "repeated_tokens",
+      "filename": "repeated_tokens.pdf",
+      "pages": [
+        {
+          "page_number": 1,
+          "expected_text": "Evidence evidence evidence appears three times in this body text.",
+          "include_in_coverage": true
+        }
+      ]
+    },
+    {
+      "id": "case_and_punctuation",
+      "filename": "case_and_punctuation.pdf",
+      "pages": [
+        {
+          "page_number": 1,
+          "expected_text": "DocuLens preserves searchable text, punctuation, and page provenance.",
+          "include_in_coverage": true
+        }
+      ]
+    }
+  ]
+}
