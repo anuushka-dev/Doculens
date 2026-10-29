@@ -2,7 +2,7 @@
 
 DocuLens is an evidence-first technical document intelligence prototype. Its goal is to answer questions about PDF documents using retrieved source evidence, page-level citations, explicit abstention when evidence is insufficient, and schema-validated structured output.
 
-**Current status:** Phase 0 feasibility work and the initial PDF ingestion API are implemented. Retrieval, grounded question answering, structured extraction, and the user interface are not yet complete.
+**Current status:** Phase 0 feasibility and the PDF ingestion API are implemented. Phase 2 page-aware chunking, local sentence-transformer embeddings, FAISS retrieval, and retrieval evaluation are implemented and tested against a manually reviewed 30-question NIST fixture. Grounded answer generation, answer citations, abstention, structured extraction, and the user interface remain future phases.
 
 ## Current capabilities
 
@@ -11,6 +11,9 @@ DocuLens is an evidence-first technical document intelligence prototype. Its goa
 - Validation of upload size, page count, malformed PDFs, encrypted PDFs, and documents with no usable extracted text.
 - Stable, one-based page numbering.
 - SHA-256 document digest and generated document identifier.
+- Deterministic page-local chunking with source-page metadata.
+- Local `sentence-transformers/all-MiniLM-L6-v2` embeddings and FAISS cosine-similarity retrieval.
+- A 30-question Recall@5 benchmark with source-page evidence review and miss diagnostics.
 - Automated tests and Ruff linting.
 
 ## Supported input and limitations
@@ -21,7 +24,7 @@ The initial target is one English, text-selectable PDF per session.
 - Maximum PDF length: 250 pages.
 - Scanned/image-only PDFs requiring OCR are not supported.
 - Reliable table structure extraction and general diagram understanding are not guaranteed.
-- Retrieval, answer citations, abstention, and structured JSON generation remain planned capabilities until their implementation and tests are complete.
+- Grounded answer generation, answer citations, abstention, and structured JSON generation are not implemented yet.
 
 DocuLens is a prototype, not a production-ready service.
 

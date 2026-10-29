@@ -28,13 +28,13 @@ The project currently has:
 
 - A Python 3.12 development environment managed by uv.
 - A configured Python package rooted at `app/`.
-- Core backend dependencies installed and synchronized.
-- Docker Desktop available from the Ubuntu WSL2 environment.
-- Initial application package directories.
+- Core backend dependencies managed by uv and locked in `uv.lock`.
+- A FastAPI PDF ingestion API with page-aware PyMuPDF extraction.
+- Page-local chunking, a sentence-transformer embedding adapter, and FAISS vector retrieval.
+- A 30-question retrieval-evaluation fixture and a script that records Recall@5, latency, source-page evidence, and miss diagnostics.
+- Automated tests and Ruff linting.
 
-The PDF ingestion, vector retrieval, grounded Q&A, citation
-validation, and structured extraction workflows still need to be
-implemented and tested.
+PDF ingestion and page-aware vector retrieval are implemented and tested. Grounded Q&A, answer-citation validation, abstention, and structured extraction remain future work.
 
 ## Planned architecture
 
@@ -43,7 +43,7 @@ implemented and tested.
 - **Configuration and schemas:** Pydantic.
 - **Embeddings:** A locally runnable embedding model, subject to
   feasibility testing.
-- **Vector storage:** ChromaDB, subject to feasibility testing.
+- **Vector storage:** FAISS for the current Phase 2 retrieval baseline, behind the vector-store adapter.
 - **Answer generation:** An LLM provider behind a replaceable adapter.
 - **Testing:** pytest and HTTPX.
 - **Interface:** A minimal Streamlit interface for the first demo.
@@ -68,8 +68,10 @@ deferred until the core retrieval and evidence checks pass.
 5. Features must pass tests and documented acceptance checks before
    being described as working.
 
+## Phase 2 retrieval evaluation
+
+The Phase 2 dataset contains 30 question/evidence-page annotations for the NIST SP 800-63-4 PDF. The complete row-by-row page review and evidence summaries are recorded in [the retrieval dataset review](phase2/retrieval_dataset_review.md). The pinned benchmark reached 83.33% Recall@5 on this fixture; this measures page-level retrieval, not generated-answer correctness.
+
 ## Development status
 
-This is an actively developed prototype. Production readiness,
-benchmark performance, and deployment reliability have not yet
-been established.
+This is an actively developed prototype. Production readiness, grounded answer correctness, and deployment reliability have not yet been established.
