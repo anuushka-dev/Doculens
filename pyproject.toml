@@ -5,10 +5,13 @@ description = "Evidence-first document intelligence for technical PDFs"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
+    "faiss-cpu>=1.9,<2",
     "fastapi>=0.143.2",
+    "numpy>=1.26,<3",
     "pydantic-settings>=2.16.0",
     "pymupdf>=1.28.2",
     "python-multipart>=0.0.32",
+    "sentence-transformers>=3.4,<6",
     "uvicorn[standard]>=0.54.0",
 ]
 
