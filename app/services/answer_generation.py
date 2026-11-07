@@ -1,9 +1,9 @@
-
 """Single-document, evidence-gated answer generation."""
 
 from __future__ import annotations
 
 import asyncio
+import logging
 from collections.abc import Callable, Sequence
 from typing import Protocol, TypeVar
 from uuid import uuid4
@@ -16,14 +16,13 @@ from app.schemas.answer import (
     AnswerStatus,
 )
 from app.schemas.document import ExtractedPage
-from app.schemas.retrieval import (
-    RetrievalResponse,
-    RetrievedChunk,
-)
+from app.schemas.retrieval import RetrievedChunk
 from app.services.evidence_validator import (
     EvidenceValidationError,
     EvidenceValidator,
 )
+
+logger = logging.getLogger(__name__)
 
 ModelT = TypeVar("ModelT", bound=BaseModel)
 
@@ -36,11 +35,16 @@ class StructuredGenerator(Protocol):
         *,
         prompt: str,
         response_model: type[ModelT],
-    ) -> ModelT:
-        ...
+    ) -> ModelT: ...
 
-    async def aclose(self) -> None:
-        ...
+    async def aclose(self) -> None: ...
+
+
+class RetrievalSearchResponse(Protocol):
+    """Minimum result contract shared by dense and hybrid retrieval."""
+
+    @property
+    def results(self) -> Sequence[RetrievedChunk]: ...
 
 
 class RetrievalPipelineProtocol(Protocol):
@@ -52,24 +56,26 @@ class RetrievalPipelineProtocol(Protocol):
         *,
         document_id: str,
         file_name: str,
-    ) -> object:
-        ...
+    ) -> object: ...
 
     def search(
         self,
         query: str,
         *,
         top_k: int | None = None,
-    ) -> RetrievalResponse:
-        ...
+    ) -> RetrievalSearchResponse: ...
 
 
 def _default_pipeline_factory() -> RetrievalPipelineProtocol:
-    """Import the pipeline only when answer generation actually needs it."""
+    """Create the benchmark-selected equal-weight RRF retrieval pipeline."""
 
-    from app.services.retrieval_pipeline import RetrievalPipeline
+    from app.services.hybrid_retrieval import HybridRetrievalPipeline
 
-    return RetrievalPipeline()
+    return HybridRetrievalPipeline(
+        dense_candidate_k=20,
+        lexical_candidate_k=20,
+        rrf_k=60,
+    )
 
 
 ANSWER_INSTRUCTIONS = """\
@@ -120,14 +126,10 @@ class AnswerGenerationService:
             raise ValueError("top_k must be between 1 and 20")
 
         if not -1.0 <= evidence_threshold <= 1.0:
-            raise ValueError(
-                "evidence_threshold must be between -1 and 1"
-            )
+            raise ValueError("evidence_threshold must be between -1 and 1")
 
         if max_context_chars < 500:
-            raise ValueError(
-                "max_context_chars must be at least 500"
-            )
+            raise ValueError("max_context_chars must be at least 500")
 
         self.llm_client = llm_client
         self.pipeline_factory = pipeline_factory
@@ -221,8 +223,7 @@ class AnswerGenerationService:
         *,
         request_id: str,
         answer: str = (
-            "I could not find sufficient evidence "
-            "in the uploaded document."
+            "I could not find sufficient evidence in the uploaded document."
         ),
     ) -> AnswerResponse:
         """Build a consistent response when an answer cannot be verified."""
@@ -266,8 +267,7 @@ class AnswerGenerationService:
         # A fresh single-document index should never return another
         # document's chunks. Fail closed if that boundary is violated.
         if any(
-            chunk.document_id != document_id
-            or chunk.file_name != file_name
+            chunk.document_id != document_id or chunk.file_name != file_name
             for chunk in chunks
         ):
             return self._abstention_response(
@@ -319,7 +319,12 @@ class AnswerGenerationService:
                     citation,
                 )
 
-        except EvidenceValidationError:
+        except EvidenceValidationError as exc:
+            logger.warning(
+                "Answer evidence validation failed (request_id=%s): %s",
+                request_id,
+                str(exc),
+            )
             # One invalid quote invalidates the answer as a whole.
             return self._abstention_response(
                 request_id=request_id,

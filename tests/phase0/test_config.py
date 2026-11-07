@@ -28,7 +28,7 @@ def test_default_settings_are_valid() -> None:
     assert settings.environment == "development"
     assert settings.log_level == "INFO"
     assert settings.max_upload_bytes == 20 * 1024 * 1024
-    assert settings.max_pdf_pages == 250
+    assert settings.max_pdf_pages == 350
 
 
 def test_environment_variables_override_defaults(
