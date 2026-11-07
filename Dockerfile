@@ -22,7 +22,8 @@ ENV PATH="/opt/venv/bin:${PATH}" \
     PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
     DOCULENS_ENVIRONMENT=production \
-    DOCULENS_LOG_LEVEL=INFO
+    DOCULENS_LOG_LEVEL=INFO \
+    HF_HOME=/var/cache/doculens/huggingface
 
 WORKDIR /app
 
@@ -32,7 +33,9 @@ RUN groupadd --system --gid 10001 doculens \
         --gid doculens \
         --home-dir /nonexistent \
         --shell /usr/sbin/nologin \
-        doculens
+        doculens \
+    && mkdir -p /var/cache/doculens/huggingface \
+    && chown -R 10001:10001 /var/cache/doculens
 
 COPY --from=builder --chown=10001:10001 /opt/venv /opt/venv
 COPY --chown=10001:10001 app/ ./app/

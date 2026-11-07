@@ -28,6 +28,11 @@ services:
       DOCULENS_LOG_LEVEL: "${DOCULENS_LOG_LEVEL:-INFO}"
       DOCULENS_MAX_UPLOAD_BYTES: "${DOCULENS_MAX_UPLOAD_BYTES:-20971520}"
       DOCULENS_MAX_PDF_PAGES: "${DOCULENS_MAX_PDF_PAGES:-250}"
+      DOCULENS_OLLAMA_BASE_URL: "http://host.docker.internal:11434"
+      HF_HOME: "/var/cache/doculens/huggingface"
+
+    volumes:
+      - huggingface-cache:/var/cache/doculens/huggingface
 
     healthcheck:
       test:
@@ -39,3 +44,6 @@ services:
       timeout: 3s
       retries: 3
       start_period: 10s
+
+volumes:
+  huggingface-cache:
